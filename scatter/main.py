@@ -19,6 +19,7 @@ for i in range(2, len(sys.argv)):
     w1 = []
     w2 = []
 
+    weatherfile.seek(0)
     while s_row[0] != w_row[0]:
         w_row = next(weather)
 
@@ -57,7 +58,7 @@ for i in range(2, len(sys.argv)):
 
     fig = plt.figure()
     ax1 = fig.add_subplot(1, 2, 1)
-    ax1.scatter(s1, w1)
+    ax1.scatter(s1, w1, alpha=0.2, s=0.5)
     ax1.set_title('first scatter plot')
     ax1.set_xlabel('sensor1')
     ax1.set_ylabel('weather')
@@ -66,7 +67,7 @@ for i in range(2, len(sys.argv)):
     # fig1.show()
 
     ax2 = fig.add_subplot(1, 2, 2)
-    ax2.scatter(s2, w2)
+    ax2.scatter(s2, w2, alpha=0.2, s=0.5)
     ax2.set_title('first scatter plot')
     ax2.set_xlabel('sensor2')
     ax2.set_ylabel('weather')
@@ -75,6 +76,6 @@ for i in range(2, len(sys.argv)):
     # fig2.show()
 
     fig.tight_layout()
-    plt.savefig("test.png")
+    plt.savefig(sys.argv[i][:-16] + ".png")
 
 weatherfile.close()

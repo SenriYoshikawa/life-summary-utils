@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from datetime import *
 from datetime import datetime as dt
+from statistics import mean
 
 
 def check_forward(sensor_list, index, n):
@@ -49,9 +50,9 @@ def data_load(in_filename):
     return [date_np, data_np]
 
 
-def draw_graph(path, date_list, data_list, label_list):
+def draw_graph(path, date_list, data_list, turning_list, label_list):
     title = path[path.rfind('/') + 1:]
-    title = path[path.rfind('\\') + 1:]
+    title = title[path.rfind('\\') + 1:]
     title = title[:-4]
     try:
         os.mkdir(path[:-4])
@@ -64,13 +65,13 @@ def draw_graph(path, date_list, data_list, label_list):
         pre_date = date_list[now_time - 1440][0]
         # グラフ書き出し
         plt.cla()
-        plt.figure(figsize=(20, 6))
+        plt.figure(figsize=(20, 8))
         plt.tight_layout()
         week = datetime.strptime(pre_date, "%Y-%m-%d")
         # plt.suptitle(sys.argv[i][-11:-4] + " " + pre_date + " " + week_list[week.weekday()])
         plt.suptitle(title + " " + pre_date + " " + week_list[week.weekday()])
 
-        plt.subplot(3, 1, 1)
+        plt.subplot(4, 1, 1)
         plt.xticks([0, 120, 240, 360, 480, 600, 720, 840, 960, 1080, 1200, 1320, 1440],
                    ["0", "2", "4", "6", "8", "10", "12", "14", "16", "18", "20", "22", "24"])
         # plt.bar(range(1440),data_list[now_time-1440: now_time,0])
@@ -78,7 +79,7 @@ def draw_graph(path, date_list, data_list, label_list):
         plt.ylim(-1, 17)
         plt.title("living", loc='right')
 
-        plt.subplot(3, 1, 2)
+        plt.subplot(4, 1, 2)
         plt.xticks([0, 120, 240, 360, 480, 600, 720, 840, 960, 1080, 1200, 1320, 1440],
                    ["0", "2", "4", "6", "8", "10", "12", "14", "16", "18", "20", "22", "24"])
         # plt.bar(range(1440),data_list[now_time-1440:now_time,1])
@@ -86,16 +87,39 @@ def draw_graph(path, date_list, data_list, label_list):
         plt.ylim(-1, 17)
         plt.title("entrance", loc='right')
 
-        plt.subplot(3, 1, 3)
+        plt.subplot(4, 1, 3)
+        plt.xticks([0, 120, 240, 360, 480, 600, 720, 840, 960, 1080, 1200, 1320, 1440],
+                   ["0", "2", "4", "6", "8", "10", "12", "14", "16", "18", "20", "22", "24"])
+        plt.plot(turning_list[now_time - 1440:now_time])
+        plt.ylim(-0.1, 1.1)
+        plt.title("turning", loc='right')
+
+        plt.subplot(4, 1, 4)
         plt.xticks([0, 120, 240, 360, 480, 600, 720, 840, 960, 1080, 1200, 1320, 1440],
                    ["0", "2", "4", "6", "8", "10", "12", "14", "16", "18", "20", "22", "24"])
         plt.plot(label_list[now_time - 1440:now_time])
-        plt.ylim(-0.1, 1.1)
+        plt.ylim(-1.1, 1.1)
         plt.title("label", loc='right')
 
         plt.savefig(path + "-" + pre_date + ".png", transparent=False)
         plt.close()
-        print(title + "-" + pre_date + " outputed")
+        print(title + "-" + pre_date + " outputted")
+
+
+def write2csv(path, date_list, data_list, label_list):
+    title = path[path.rfind('/') + 1:]
+    title = title[path.rfind('\\') + 1:]
+    title = title[:-4]
+    try:
+        os.mkdir(path[:-4])
+    except FileExistsError:
+        pass
+    outfile = open(title + '/' + title + "-result.csv", 'w')
+
+    for i in range(len(date_list)):
+        outfile.write(date_list[i][0] + ',' + date_list[i][1] + ',' + str(data_list[i][0]) + ',' + str(
+            data_list[i][1]) + ',' + str(label_list[i]) + '\n')
+    outfile.close()
 
 
 def _main():
@@ -106,21 +130,44 @@ def _main():
     for i in range(1, len(sys.argv)):
         in_filename = sys.argv[i]
         date_list, data_list = data_load(in_filename)
+        turning_list = np.zeros(len(date_list))
         label_list = np.zeros(len(date_list))
 
-
-
-        pre_date = date_list[0][0]
         data_list[0][1] = 1
 
         for now_time in range(len(date_list)):
-            now_date = date_list[now_time][0]
+            if data_list[now_time][1] > 0:
+                turning_list[now_time] = 1
 
-            if data_list[now_time][1] and (check_forward(data_list[:, 1], now_time+1, 10) is False or
-                                           check_back(data_list[:, 1], now_time-1, 10) is False):
-                label_list[now_time] = 1
+        for now_time in range(len(date_list)):
+            if turning_list[now_time] > 0 and np.sum(turning_list[now_time: now_time + 30]) > 2:
+                for j in reversed(range(now_time, now_time+30)):
+                    if turning_list[j] > 0:
+                        k = j
+                        break
+                for j in range(now_time+1, k):
+                    turning_list[j] = 0
 
-        draw_graph(sys.argv[i], date_list, data_list, label_list)
+        for now_time in range(len(date_list)):
+            if turning_list[now_time] == 1:
+                start = now_time
+                end = find_next_flag(turning_list, now_time+1)
+                if mean(data_list[start:end, 0]) > 1 or (
+                        end - start > 2 and + mean(data_list[start:end, 0]) + mean(data_list[start+1:end-1, 1]) > 1.5) or (
+                        10 < end - start < 120 and max(data_list[start+5:end-5, 0] > 4)
+                ):
+                    for j in range(start, end):
+                        label_list[j] = 1
+                elif (end - start > 2 and mean(data_list[start+1:end-1, 0]) == 0 and label_list[now_time-2] != 1) or (
+                        end - start > 1 and mean(data_list[start+1:end, 0]) == 0 and label_list[now_time-2] != 1) or (
+                        end - start > 1 and mean(data_list[start:end-1, 0]) == 0 and label_list[now_time-2] != 1) or (
+                        mean(data_list[start:end, 0]) == 0):
+                    for j in range(start, end):
+                        label_list[j] = -1
+                now_time = end - 1
+
+        #draw_graph(sys.argv[i], date_list, data_list, turning_list, label_list)
+        write2csv(sys.argv[i], date_list, data_list, label_list)
 
 
 if __name__ == '__main__':

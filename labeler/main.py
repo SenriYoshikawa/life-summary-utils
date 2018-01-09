@@ -55,7 +55,7 @@ def draw_graph(path, date_list, data_list, turning_list, label_list):
     title = title[path.rfind('\\') + 1:]
     title = title[:-4]
     try:
-        os.mkdir(path[:-4])
+        os.mkdir(title)
     except FileExistsError:
         pass
     path = title + '/' + title
@@ -74,7 +74,7 @@ def draw_graph(path, date_list, data_list, turning_list, label_list):
         plt.subplot(4, 1, 1)
         plt.xticks([0, 120, 240, 360, 480, 600, 720, 840, 960, 1080, 1200, 1320, 1440],
                    ["0", "2", "4", "6", "8", "10", "12", "14", "16", "18", "20", "22", "24"])
-        plt.xticks(list(range(0,1441,120)), list([str(i) for i in range(0,25,2)]))
+        #plt.xticks(list(range(0,1441,120)), list([str(i) for i in range(0,25,2)]))
         # plt.bar(range(1440),data_list[now_time-1440: now_time,0])
         plt.plot(data_list[now_time - 1440: now_time, 0])
         plt.ylim(-1, 17)
@@ -111,12 +111,7 @@ def write2csv(path, date_list, data_list, label_list):
     title = path[path.rfind('/') + 1:]
     title = title[path.rfind('\\') + 1:]
     title = title[:-4]
-    try:
-        os.mkdir(path[:-4])
-    except FileExistsError:
-        pass
-    outfile = open(title + '/' + title + "-result.csv", 'w')
-
+    outfile = open(title + "-result.csv", 'w')
     for i in range(len(date_list)):
         outfile.write(date_list[i][0] + ',' + date_list[i][1] + ',' + str(data_list[i][0]) + ',' + str(
             data_list[i][1]) + ',' + str(label_list[i]) + '\n')
@@ -175,9 +170,9 @@ def _main():
                         label_list[j] = -1
                 now_time = end - 1
 
-        #draw_graph(sys.argv[i], date_list, data_list, turning_list, label_list)
+        draw_graph(sys.argv[i], date_list, data_list, turning_list, label_list)
         #write2csv(sys.argv[i], date_list, data_list, label_list)
-        export2npy(sys.argv[i], data_list, label_list)
+        #export2npy(sys.argv[i], data_list, label_list)
 
 
 if __name__ == '__main__':

@@ -38,6 +38,11 @@ def find_next_flag(sensor_list, index):
 
 def data_load(in_filename):
     df = pd.read_csv(in_filename, header=None, names=['date', 'time', 'sensor1', 'sensor3'])
+    #df['missing'] = [0 for i in range(len(df))]
+    #df['missing'].where(
+    #    (df.sensor1 != 'x') & (df.sensor1 != 'X') & (df.sensor1 != '') & (df.sensor3 != 'x') & (df.sensor3 != 'X') & (
+    #    df.sensor3 != ''), 1)
+
     df['sensor1'] = df['sensor1'].replace(
         {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, 'A': 10, 'B': 11, 'C': 12,
          'D': 13, 'E': 14, 'F': 15, 'x': -1, 'X': -1, '': -1})
@@ -47,6 +52,8 @@ def data_load(in_filename):
     df.fillna({'sensor1': -1, 'sensor3': -1})
     date_np = np.array(df)[:, 0:2]
     data_np = np.array(df)[:, 2:4]
+    #missing_np = np.array(df)[:, 4:5]
+    #return [date_np, missing_np, data_np]
     return [date_np, data_np]
 
 
@@ -118,6 +125,19 @@ def write2csv(path, date_list, data_list, label_list):
     outfile.close()
 
 
+def write2csv_for_fujimoto(path, date_list, missing_list, label_list):
+    title = path[path.rfind('/') + 1:]
+    title = title[path.rfind('\\') + 1:]
+    title = title[:-4]
+    outfile = open(title + "_absenceORpresenceORvisit_flgDaily.csv", 'w')
+    for i in range(len(date_list)//1440):
+        outfile.write(date_list[i*1440][0] + ',' + ('ok' if (missing_list[i] == 0) else 'ng'))
+        for j in range(1440):
+            outfile.write(',' + str(label_list[i*440+j]))
+        outfile.write('\n')
+    outfile.close()
+
+
 def export2npy(path, data_list, label_list):
     title = path[path.rfind('/') + 1:]
     title = title[path.rfind('\\') + 1:]
@@ -136,12 +156,15 @@ def _main():
         date_list, data_list = data_load(in_filename)
         turning_list = np.zeros(len(date_list))
         label_list = np.zeros(len(date_list))
+        missing_list = np.zeros(len(date_list) // 1440)
 
         data_list[0][1] = 1
 
         for now_time in range(len(date_list)):
             if data_list[now_time][1] > 0:
                 turning_list[now_time] = 1
+            if data_list[now_time][0] < 0 or data_list[now_time][1] < 0:
+                missing_list[now_time//1440] = 1
 
         for now_time in range(len(date_list)):
             if turning_list[now_time] > 0 and np.sum(turning_list[now_time: now_time + 30]) > 2:
@@ -170,9 +193,10 @@ def _main():
                         label_list[j] = -1
                 now_time = end - 1
 
-        draw_graph(sys.argv[i], date_list, data_list, turning_list, label_list)
+        #draw_graph(sys.argv[i], date_list, data_list, turning_list, label_list)
         #write2csv(sys.argv[i], date_list, data_list, label_list)
-        #export2npy(sys.argv[i], data_list, label_list)
+        #export2npy(sys.argv[i], data_list, missing_list)
+        write2csv_for_fujimoto(sys.argv[i], date_list, missing_list, label_list)
 
 
 if __name__ == '__main__':

@@ -9,6 +9,32 @@ import os
 import jholiday
 
 
+def id_to_user(id_str):
+    if id_str == '07-0030':
+        return 'A'
+    if id_str == '10-0050':
+        return 'B'
+    if id_str == '12-0340':
+        return 'C'
+    if id_str == '18-0047':
+        return 'D'
+    if id_str == '18-0309':
+        return 'E'
+    if id_str == '18-0384':
+        return 'F'
+    if id_str == '19-0115':
+        return 'G'
+    if id_str == '20-0077':
+        return 'H'
+    if id_str == '25-0060':
+        return 'I'
+    if id_str == '44-0046':
+        return 'J'
+    if id_str == '48-0025':
+        return 'K'
+    return 'None user'
+
+
 def make_sentence(a):
     if a < -50:
         return "急激に減少しています."
@@ -120,7 +146,7 @@ for i in range(1, len(sys.argv)):
 
             if len(sensor1_result[month]) > 2 or (len(sensor1_result[month]) > 1 and sensor1_result[month][0] != 0):
                 ratio = -1
-                if sensor1_result[month][-2] < 0.1:
+                if sensor1_result[month][-2] < 0.01:
                     ratio = 1000
                 else:
                     ratio = round(((float(sensor1_result[month][-1]) / sensor1_result[month][-2]) - 1)* 100)
@@ -187,10 +213,13 @@ for i in range(1, len(sys.argv)):
         plt.plot(x, np.poly1d(np.polyfit(x, sensor1_result[j][a:b], 1))(x), '--', color=color_list2[j - 1])
         slope_list1.append(np.polyfit(x, sensor1_result[j][a:b], 1)[0])
     plt.legend()
+    plt.ylim(ymin=0)
     plt.xlabel("year")
     plt.xticks(range(len(year_list)), year_list)
-    plt.title(sys.argv[i][-11:-4] + "living")
-    plt.savefig(sys.argv[i][0:-4] + "living.png")
+    # plt.title(sys.argv[i][-11:-4] + "living")
+    plt.title("User-" + id_to_user(sys.argv[i][-11:-4]) + "-reduce activity living")
+    # plt.savefig(sys.argv[i][0:-4] + "living.png")
+    plt.savefig(sys.argv[i][-11:-4]+"/user-" + id_to_user(sys.argv[i][-11:-4]) + "-reduce-activity-living.png")
 
     plt.clf()
     for j in range(1, 5):

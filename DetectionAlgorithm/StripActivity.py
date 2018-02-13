@@ -9,6 +9,32 @@ import os
 import jholiday
 
 
+def id_to_user(id_str):
+    if id_str == '07-0030':
+        return 'A'
+    if id_str == '10-0050':
+        return 'B'
+    if id_str == '12-0340':
+        return 'C'
+    if id_str == '18-0047':
+        return 'D'
+    if id_str == '18-0309':
+        return 'E'
+    if id_str == '18-0384':
+        return 'F'
+    if id_str == '19-0115':
+        return 'G'
+    if id_str == '20-0077':
+        return 'H'
+    if id_str == '25-0060':
+        return 'I'
+    if id_str == '44-0046':
+        return 'J'
+    if id_str == '48-0025':
+        return 'K'
+    return 'None user'
+
+
 if len(sys.argv) > 0 and sys.argv[1].find('csv') == -1:
     sys.argv.extend(glob.glob(sys.argv[1] + '*.csv'))
     del sys.argv[1]
@@ -33,6 +59,7 @@ for i in range(1, len(sys.argv)):
     go_living_count = 0
     active_days_count = 0
     month_list = []
+    month_sum = 0
 
     for row in reader:
         date = row[0]
@@ -86,20 +113,24 @@ for i in range(1, len(sys.argv)):
             # yyyy-mm が変わったとき
             if pre_date[:-3] != date[:-3]:
                 if active_days_count != 0:
-                    strip_count /= active_days_count
+                    #strip_count /= active_days_count
+                    strip_count /= month_sum
                     #print(pre_date[:-3] + " " + str(active_days_count) + " " + str(strip_count))
                     strip_count_list.append(strip_count)
                     strip_stdev_list.append(np.std(strip_count_list))
                     month_list.append(pre_date[:-3])
                 strip_count = 0
                 active_days_count = 0
+                month_sum = 0
 
             pre_date = date
 
         if len(row) > 2 and row[2] != 'x' and row[2] != 'X':
             sensor1 = int(row[2], 16)
+            month_sum += sensor1
             if len(row) > 3 and row[3] != 'x' and row[3] != 'X':
                 sensor3 = int(row[3], 16)
+                month_sum += sensor3
             else:
                 sensor3 = -1
         else:
@@ -164,8 +195,11 @@ for i in range(1, len(sys.argv)):
     plt.legend()
     plt.xlabel("month")
     plt.xticks(range(len(month_list))[::(len(month_list)//12)], month_list[::(len(month_list)//12)], rotation=45)
-    plt.title(sys.argv[i][:-4] + " strip activity result")
-    plt.savefig(sys.argv[i][:-4] + " strip activity result.png")
+    plt.ylim(ymin=0)
+    # plt.title(sys.argv[i][:-4] + " strip activity result")
+    plt.title('User ' + id_to_user(sys.argv[i][-11:-4]) + " strip activity result")
+    # plt.savefig(sys.argv[i][:-4] + " strip activity result.png")
+    plt.savefig('user-' + id_to_user(sys.argv[i][-11:-4]) + "-strip-activity-result.png")
 
     slope = np.polyfit(x, strip_count_list, 1)[0]
     print(sys.argv[i][:-4] + "の結果")

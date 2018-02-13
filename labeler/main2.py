@@ -38,11 +38,6 @@ def find_next_flag(sensor_list, index):
 
 def data_load(in_filename):
     df = pd.read_csv(in_filename, header=None, names=['date', 'time', 'sensor1', 'sensor3'])
-    #df['missing'] = [0 for i in range(len(df))]
-    #df['missing'].where(
-    #    (df.sensor1 != 'x') & (df.sensor1 != 'X') & (df.sensor1 != '') & (df.sensor3 != 'x') & (df.sensor3 != 'X') & (
-    #    df.sensor3 != ''), 1)
-
     df['sensor1'] = df['sensor1'].replace(
         {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, 'A': 10, 'B': 11, 'C': 12,
          'D': 13, 'E': 14, 'F': 15, 'x': -1, 'X': -1, '': -1})
@@ -52,8 +47,7 @@ def data_load(in_filename):
     df.fillna({'sensor1': -1, 'sensor3': -1})
     date_np = np.array(df)[:, 0:2]
     data_np = np.array(df)[:, 2:4]
-    #missing_np = np.array(df)[:, 4:5]
-    #return [date_np, missing_np, data_np]
+    data_np = np.array(data_np, dtype=float)
     return [date_np, data_np]
 
 
@@ -125,7 +119,15 @@ def write2csv(path, date_list, data_list, label_list):
     outfile.close()
 
 
-def write2csv_for_fujimoto(path, date_list, missing_list, label_list):
+def export2npy(path, data_list, label_list):
+    title = path[path.rfind('/') + 1:]
+    title = title[path.rfind('\\') + 1:]
+    title = title[:-4]
+    np.save(title + 'data.npy',data_list)
+    np.save(title + 'label.npy', label_list)
+
+
+def write2csv_for_fuji(path, date_list, missing_list, label_list):
     title = path[path.rfind('/') + 1:]
     title = title[path.rfind('\\') + 1:]
     title = title[:-4]
@@ -138,12 +140,35 @@ def write2csv_for_fujimoto(path, date_list, missing_list, label_list):
     outfile.close()
 
 
-def export2npy(path, data_list, label_list):
-    title = path[path.rfind('/') + 1:]
-    title = title[path.rfind('\\') + 1:]
-    title = title[:-4]
-    np.save(title + 'data.npy',data_list)
-    np.save(title + 'label.npy', label_list)
+def eval_average(data_list, start, end):
+    count = 0
+    array=np.zeros((end-start,2),dtype=float)
+    #print(array)
+    #print(type(array))
+    try:
+        for j in range(1,7):
+            if start-1440*j < 0:
+                break
+            if data_list[start-1440*j,0] == -1 or data_list[start-1440*j,1] == -1:
+                continue
+            #print(str(start-1440*j) + " " + str(end-1440*j))
+            #print(data_list[start-1440*j:end-1440*j])
+            #print(type(data_list[start-1440*j:end-1440*j]))
+            array += data_list[start-1440*j:end-1440*j]
+            count += 1
+    except IndexError:
+        pass
+    try:
+        for j in range(1, 7):
+            if end+1440*j > len(data_list):
+                break;
+            if data_list[start+1440*j,0] == -1 or data_list[start+1440*j,1] == -1:
+                continue
+            array += data_list[start+1440*j:end+1440*j]
+            count += 1
+    except IndexError:
+        pass
+    return (np.nanmean(array[:, 0])+np.nanmean(array[:, 1]))/count
 
 
 def _main():
@@ -174,30 +199,32 @@ def _main():
                         break
                 for j in range(now_time+1, k):
                     turning_list[j] = 0
-
+        count = 0
         for now_time in range(len(date_list)):
             if turning_list[now_time] == 1:
                 start = now_time
                 end = find_next_flag(turning_list, now_time+1)
-                if mean(data_list[start:end, 0]) > 1 or (
-                        end - start > 2 and + mean(data_list[start:end, 0]) + mean(data_list[start+1:end-1, 1]) > 1.5) or (
-                        10 < end - start < 120 and max(data_list[start+5:end-5, 0] > 4)
-                ):
-                    for j in range(start, end):
-                        label_list[j] = 1
-                elif (end - start > 2 and mean(data_list[start+1:end-1, 0]) == 0 and label_list[now_time-2] != 1) or (
-                        end - start > 1 and mean(data_list[start+1:end, 0]) == 0 and label_list[now_time-2] != 1) or (
-                        end - start > 1 and mean(data_list[start:end-1, 0]) == 0 and label_list[now_time-2] != 1) or (
+                if (end - start > 2 and mean(data_list[start+1:end-1, 0]) == 0) or (
+                        end - start > 1 and mean(data_list[start+1:end, 0]) == 0) or (
+                        end - start > 1 and mean(data_list[start:end-1, 0]) == 0) or (
                         mean(data_list[start:end, 0]) == 0):
                     for j in range(start, end):
                         label_list[j] = -1
+                elif mean(data_list[start:end,0]) + mean(data_list[start:end,1]) > eval_average(data_list, start, end) * 1.5:
+                    #print(date_list[now_time])
+                    #print(mean(data_list[start:end, 0]) + mean(data_list[start:end, 1]))
+                    #print(eval_average(data_list, start,end) * 1.5)
+                    #count +=1
+                    #if count > 100:
+                    #    exit(0)
+                    for j in range(start, end):
+                        label_list[j] = 1
                 now_time = end - 1
 
         draw_graph(sys.argv[i], date_list, data_list, turning_list, label_list)
         write2csv(sys.argv[i], date_list, data_list, label_list)
-        #export2npy(sys.argv[i], data_list, missing_list)
-        write2csv_for_fujimoto(sys.argv[i], date_list, missing_list, label_list
-
+        export2npy(sys.argv[i], data_list, label_list)
+        write2csv_for_fuji(sys.argv[i], date_list, missing_list, label_list)
 
 if __name__ == '__main__':
     _main()

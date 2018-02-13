@@ -117,7 +117,7 @@ for i in range(2, len(sys.argv)):
     fig.tight_layout()
     plt.savefig(sys.argv[i][0:-4] + "temprature_all_month.png")
 
-    fig = plt.figure(figsize=(20, 12))
+    fig = plt.figure(figsize=(30, 20))
     for j in range(1, 13):
         ax1 = fig.add_subplot(6, 8, j * 4 - 3)
         ax1.scatter(s1e_vol[j], w1e[j], alpha=0.5, s=0.5)

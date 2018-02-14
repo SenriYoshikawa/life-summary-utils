@@ -125,7 +125,7 @@ def write2csv(path, date_list, data_list, label_list):
     outfile.close()
 
 
-def write2csv_for_fujimoto(path, date_list, missing_list, label_list):
+def write2csv_for_fuji(path, date_list, missing_list, label_list):
     title = path[path.rfind('/') + 1:]
     title = title[path.rfind('\\') + 1:]
     title = title[:-4]
@@ -196,7 +196,7 @@ def _main():
         #draw_graph(sys.argv[i], date_list, data_list, turning_list, label_list)
         #write2csv(sys.argv[i], date_list, data_list, label_list)
         #export2npy(sys.argv[i], data_list, missing_list)
-        write2csv_for_fujimoto(sys.argv[i], date_list, missing_list, label_list)
+        write2csv_for_fuji(sys.argv[i], date_list, missing_list, label_list)
 
 
 if __name__ == '__main__':

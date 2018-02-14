@@ -193,10 +193,10 @@ def _main():
                         label_list[j] = -1
                 now_time = end - 1
 
-        #draw_graph(sys.argv[i], date_list, data_list, turning_list, label_list)
-        #write2csv(sys.argv[i], date_list, data_list, label_list)
+        draw_graph(sys.argv[i], date_list, data_list, turning_list, label_list)
+        write2csv(sys.argv[i], date_list, data_list, label_list)
         #export2npy(sys.argv[i], data_list, missing_list)
-        write2csv_for_fuji(sys.argv[i], date_list, missing_list, label_list)
+        write2csv_for_fuji(sys.argv[i], date_list, missing_list, label_list
 
 
 if __name__ == '__main__':
